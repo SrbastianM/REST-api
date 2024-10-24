@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -26,4 +27,27 @@ func (app *application) readIDParam(r *http.Request) (int64, error) {
 	}
 
 	return id, nil
+}
+
+func (app *application) writeJSON(w http.ResponseWriter, status int, data interface{}, header http.Header) error {
+	//Encode the data to JSON and return err if there was one
+	js, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	js = append(js, '\n')
+
+	// We won't encored errors at this point so we can write any headers.
+	// we loop through the header map and add each header to the http.ResponseWriter header map.
+	// if the map isn't nil that means its OK. Go doesn't trow an error
+	for key, value := range header {
+		w.Header()[key] = value
+	}
+	// Add "Content-Type: application-json" header, them write the status code and JSON response
+	w.Header().Set("Content-Type", "application-json")
+	w.WriteHeader(status)
+	w.Write(js)
+
+	return nil
 }
