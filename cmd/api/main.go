@@ -51,10 +51,10 @@ func main() {
 	mux.HandleFunc("/v1/healthcheck", app.healthcheckHandler)
 
 	// Declare a HTTP server with some sensible properties timeout settings
-	// it listents on the port provided (4000), and use the servemux as handler
+	// it listents on the port provided (4000), and use the httprouter as handler
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      mux,
+		Handler:      app.routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
