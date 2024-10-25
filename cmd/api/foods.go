@@ -8,7 +8,25 @@ import (
 )
 
 func (app *application) createFoodHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "create new food")
+	// Declare a anonyms struct to hold the information that expect to be in HTTP
+	// request body
+	var input struct {
+		Title  string
+		Year   int32
+		Genres []string
+	}
+
+	// Initialize a new json.Decoder() instance which reads from the request body
+	// and then use Decode() method to decode the body contents into input struct.
+	// If there was an error during decoding it send a generic errorResponse() helper
+	// to send the 400 bad request
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	fmt.Fprintf(w, "%+v\n", input)
 }
 
 // Use the helper "ReadIdParam"
@@ -18,7 +36,7 @@ func (app *application) showFoodHandler(w http.ResponseWriter, r *http.Request) 
 		app.notFoundResponse(w, r)
 		return
 	}
-	// Create a new instance of the MOvie Struct, containing the ID extracted from
+	// Create a new instance of the food Struct, containing the ID extracted from
 	// URL and dummy data.
 	food := data.Food{
 		ID:       id,
