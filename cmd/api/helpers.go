@@ -9,6 +9,9 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+// Define the envelop type
+type envelop map[string]interface{}
+
 // Retrieve the "id" parameter form the current request context then convert it into a integer
 // and return it. If the operation isn't successfully, return 0 an error.
 func (app *application) readIDParam(r *http.Request) (int64, error) {
@@ -29,9 +32,10 @@ func (app *application) readIDParam(r *http.Request) (int64, error) {
 	return id, nil
 }
 
-func (app *application) writeJSON(w http.ResponseWriter, status int, data interface{}, header http.Header) error {
+func (app *application) writeJSON(w http.ResponseWriter, status int, data envelop, header http.Header) error {
 	//Encode the data to JSON and return err if there was one
-	js, err := json.Marshal(data)
+	// Indent the terminal output putting a tab and no line prefix ("")
+	js, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
 		return err
 	}
