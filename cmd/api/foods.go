@@ -2,18 +2,26 @@ package main
 
 import (
 	"SrbastianM/rest-api-gin/internal/data"
+	"SrbastianM/rest-api-gin/internal/validator"
 	"fmt"
 	"net/http"
 	"time"
 )
 
+type Food struct {
+	ID        int64
+	CreatedAt time.Time
+	Title     string
+	Types     []string
+	Version   int32
+}
+
 func (app *application) createFoodHandler(w http.ResponseWriter, r *http.Request) {
 	// Declare a anonyms struct to hold the information that expect to be in HTTP
 	// request body
 	var input struct {
-		Title  string
-		Year   int32
-		Genres []string
+		Title string
+		Types []string
 	}
 
 	// Initialize a new json.Decoder() instance which reads from the request body
@@ -23,6 +31,18 @@ func (app *application) createFoodHandler(w http.ResponseWriter, r *http.Request
 	err := app.readJSON(w, r, &input)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	food := &data.Food{
+		Title: input.Title,
+		Types: input.Types,
+	}
+
+	v := validator.New()
+
+	if data.ValidateFood(v, food); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 
