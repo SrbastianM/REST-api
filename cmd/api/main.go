@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
@@ -47,6 +48,10 @@ func main() {
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	// Read the DSN value from the db-dsn command-line flag into the config struct. It use development DSN cuz
 	//  is not flag provided
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Error loading the .env file: %s", err)
+	}
 	flag.StringVar(&cfg.db.dsn, "db-sn", os.Getenv("GREENLIGHT_DB_DSN"), "PostgreSQL DSN")
 
 	flag.IntVar(&cfg.db.maxOpensConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
