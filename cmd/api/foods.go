@@ -45,6 +45,26 @@ func (app *application) createFoodHandler(w http.ResponseWriter, r *http.Request
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
+	// Call Insert() method in the food model, passing pointer to the validated movie struct.
+	// This wil create a record in the database and update the movie struct with the
+	// system-generated information.
+	err = app.models.Foods.Insert(food)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Make an empty http.Header map and then use the Set() method to add a new location Header,
+	// interpoling the system-generated ID for the new food in the URL
+	headers := make(http.Header)
+	headers.Set("Location", fmt.Sprintf("/v/foods/%d", food.ID))
+
+	// Wrte a Json response with a 201 Created status code, the food data in the
+	// response body, and the location header
+	err = app.writeJSON(w, http.StatusCreated, envelop{"food": food}, headers)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 
 	fmt.Fprintf(w, "%+v\n", input)
 }
