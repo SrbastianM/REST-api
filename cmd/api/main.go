@@ -1,6 +1,7 @@
 package main
 
 import (
+	"SrbastianM/rest-api-gin/internal/data"
 	"context"
 	"database/sql"
 	"flag"
@@ -37,6 +38,7 @@ type config struct {
 type application struct {
 	config config
 	logger *log.Logger
+	models data.Models
 }
 
 func main() {
@@ -64,12 +66,6 @@ func main() {
 	// prefixed with the current date and time
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
-	// instance of the application struct, contain config struct and the logger
-	app := &application{
-		config: cfg,
-		logger: logger,
-	}
-
 	db, err := openDB(cfg)
 	if err != nil {
 		logger.Fatal(err)
@@ -78,6 +74,13 @@ func main() {
 	defer db.Close()
 
 	logger.Printf("database connection pool established")
+	// instance of the aplication struct, contains config struct and the logger
+	app := &application{
+		config: cfg,
+		logger: logger,
+		models: data.NewModels(db),
+	}
+
 	// Declare a new serveMux and add the version and the route wich dispatches requests
 	// to healthcheck method
 	mux := http.NewServeMux()
