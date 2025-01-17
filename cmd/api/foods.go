@@ -3,6 +3,7 @@ package main
 import (
 	"SrbastianM/rest-api-gin/internal/data"
 	"SrbastianM/rest-api-gin/internal/validator"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -76,15 +77,20 @@ func (app *application) showFoodHandler(w http.ResponseWriter, r *http.Request) 
 		app.notFoundResponse(w, r)
 		return
 	}
-	// Create a new instance of the food Struct, containing the ID extracted from
-	// URL and dummy data.
-	food := data.Food{
-		ID:       id,
-		CreateAt: time.Now(),
-		Title:    "Potato",
-		Types:    []string{"vegetables", "fruit", "fat"},
-		Version:  1,
+	// Change the hardcode value to the Get() method create in internal/data/foods.go.
+	// This method fetch the data for a specific food. Also catch some error if is not found,
+	// returning 404 Not Found response to the client.
+	food, err := app.models.Foods.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
 	}
+
 	// encode the struct to JSON  and send it as the HTTP Response
 	// Create an instance of envelop to it to writeJSON()
 	err = app.writeJSON(w, http.StatusOK, envelop{"food": food}, nil)

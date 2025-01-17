@@ -3,7 +3,10 @@ package data
 import (
 	"SrbastianM/rest-api-gin/internal/validator"
 	"database/sql"
+	"errors"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type Food struct {
@@ -45,13 +48,44 @@ func (f FoodModel) Insert(food *Food) error {
 	 VALUES ($1, $2)
 	 RETURNING id, created_at, version
 	`
-	args := []interface{}{food.Title, food.Types}
+	args := []interface{}{food.Title, pq.Array(food.Types)}
 	return f.DB.QueryRow(query, args...).Scan(&food.ID, &food.CreateAt, &food.Version)
 }
 
 // Add placeholder method for fetching a specific record from the food table.
 func (f FoodModel) Get(id int64) (*Food, error) {
-	return nil, nil
+	// Checks if the record id is less than 0 (thats checked passing the parameter
+	// auto-increment when the db and tables where created). But to take a shorcut
+	// is validate.
+	if id < 1 {
+		return nil, ErrRecordNotFound
+	}
+	// Define the SQL Query for retrieving the movie data
+	query := `SELECT id, created_at, title, type, version FROM foods WHERE id = $1`
+	// Declare de Food struct to hold the data returning by the query
+	var food Food
+
+	// Executes a query using QueryRow() method, passing provided id value
+	// as a placeholder parameter, and scan the response data into the fields
+	// the Movie struct
+	err := f.DB.QueryRow(query, id).Scan(
+		&food.ID,
+		&food.CreateAt,
+		&food.Title,
+		pq.Array(&food.Types),
+		&food.Version,
+	)
+	// Handle any errors. If there no matching movie found. Otherwise return a pointer to the
+	// Food struct
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+	return &food, nil
 }
 
 // Add a placeholder method for updating a specific record in the food table.
