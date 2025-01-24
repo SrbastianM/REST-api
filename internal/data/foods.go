@@ -106,8 +106,27 @@ func (f FoodModel) Update(food *Food) error {
 }
 
 // Add a placeholder method for deleting a specific record from movies table.
-func (f FoodModel) Delete(id int64) (*Food, error) {
-	return nil, nil
+func (f FoodModel) Delete(id int64) error {
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+	query := `DELETE FROM foods WHERE id=$1`
+
+	result, err := f.DB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+
+	return nil
 }
 
 func ValidateFood(v *validator.Validator, food *Food) {
