@@ -99,3 +99,58 @@ func (app *application) showFoodHandler(w http.ResponseWriter, r *http.Request) 
 		app.serverErrorResponse(w, r, err)
 	}
 }
+
+func (app *application) updateFoodHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := app.readIDParam(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	food, err := app.models.Foods.Get(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+	// Declare a struct to hold the expected data from client
+	var input struct {
+		Title string
+		Types []string
+	}
+	// Read the json request body data into the input struct
+	err = app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+	// Copy the values from the request body to the aproppiate fields of the food
+	food.Title = input.Title
+	food.Types = input.Types
+
+	// Validate the updated food record, sending the client a 422 Unprocessable Entity
+	// response if any checks fails
+	v := validator.New()
+
+	if data.ValidateFood(v, food); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	// Pass the updated movie record to our new Update() method
+	err = app.models.Foods.Update(food)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+	// Write the updated movie record in a JSON Response
+	err = app.writeJSON(w, http.StatusOK, envelop{"food": food}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+
+}
