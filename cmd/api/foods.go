@@ -152,5 +152,32 @@ func (app *application) updateFoodHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
+}
 
+func (app *application) deleteFoodHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract the food Id from the URL
+	id, err := app.readIDParam(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	// Delete the food from DB, sending 404 Not found response to the client if there isn't a
+	// matching record
+	err = app.models.Foods.Delete(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	// Return 200 OK status code along with a success message
+	err = app.writeJSON(w, http.StatusOK, envelop{"message": "Food successfully deleted"}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
