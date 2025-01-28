@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -117,9 +118,17 @@ func (app *application) updateFoodHandler(w http.ResponseWriter, r *http.Request
 		}
 		return
 	}
+
+	if r.Header.Get("X-expected-Version") != "" {
+		if strconv.FormatInt(int64(food.Version), 32) != r.Header.Get("X-Expected-Version") {
+			app.editConflictResponse(w, r)
+		}
+		return
+	}
+
 	// Declare a struct to hold the expected data from client
 	var input struct {
-		Title string
+		Title *string
 		Types []string
 	}
 	// Read the json request body data into the input struct
@@ -128,9 +137,16 @@ func (app *application) updateFoodHandler(w http.ResponseWriter, r *http.Request
 		app.badRequestResponse(w, r, err)
 		return
 	}
-	// Copy the values from the request body to the aproppiate fields of the food
-	food.Title = input.Title
-	food.Types = input.Types
+	// If the input value is nil it means that no corresponding "title" key/value pair provided
+	// by the json reques body. So  move on and leave the record unchanged. Otherwise, update the
+	// record with the new title value. It happens too with the types slices.
+	if input.Title != nil {
+		food.Title = *input.Title
+	}
+
+	if input.Types != nil {
+		food.Types = input.Types
+	}
 
 	// Validate the updated food record, sending the client a 422 Unprocessable Entity
 	// response if any checks fails
@@ -141,10 +157,16 @@ func (app *application) updateFoodHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Pass the updated movie record to our new Update() method
+	// Pass the updated movie record to our new Update() method. Intercept any ErrEditConflict() error and
+	// call the new editConflictResponse() helper.
 	err = app.models.Foods.Update(food)
 	if err != nil {
-		app.serverErrorResponse(w, r, err)
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
 		return
 	}
 	// Write the updated movie record in a JSON Response

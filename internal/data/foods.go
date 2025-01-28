@@ -91,13 +91,14 @@ func (f FoodModel) Get(id int64) (*Food, error) {
 // Add a placeholder method for updating a specific record in the food table.
 func (f FoodModel) Update(food *Food) error {
 	// Declare SQL query for updating the record and returning the new version number
-	query := `UPDATE foods SET title = $1, type = $2, version = version + 1 WHERE id = $3 RETURNING version`
+	query := `UPDATE foods SET title = $1, type = $2, version = version + 1 WHERE id = $3 AND version =$4 RETURNING version`
 
 	// Create args slice containing the values for the placeholder parameters.
 	arg := []interface{}{
 		food.Title,
 		pq.Array(food.Types),
 		food.ID,
+		food.Version,
 	}
 
 	// Use the QueryRow() to execute the query, passing args slices as a variadic parameter and scanning

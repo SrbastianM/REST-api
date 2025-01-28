@@ -9,6 +9,7 @@ import (
 // Get() method then looking up a food doesn't exist in our database
 var (
 	ErrRecordNotFound = errors.New("Record not found")
+	ErrEditConflict   = errors.New("edit conflict")
 )
 
 // Create models struct which wraps the FoodModel. We'll add another models to this
