@@ -2,6 +2,7 @@ package data
 
 import (
 	"SrbastianM/rest-api-gin/internal/validator"
+	"context"
 	"database/sql"
 	"errors"
 	"time"
@@ -49,7 +50,10 @@ func (f FoodModel) Insert(food *Food) error {
 	 RETURNING id, created_at, version
 	`
 	args := []interface{}{food.Title, pq.Array(food.Types)}
-	return f.DB.QueryRow(query, args...).Scan(&food.ID, &food.CreateAt, &food.Version)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return f.DB.QueryRowContext(ctx, query, args...).Scan(&food.ID, &food.CreateAt, &food.Version)
 }
 
 // Add placeholder method for fetching a specific record from the food table.
@@ -65,10 +69,12 @@ func (f FoodModel) Get(id int64) (*Food, error) {
 	// Declare de Food struct to hold the data returning by the query
 	var food Food
 
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	// Executes a query using QueryRow() method, passing provided id value
 	// as a placeholder parameter, and scan the response data into the fields
 	// the Movie struct
-	err := f.DB.QueryRow(query, id).Scan(
+	err := f.DB.QueryRowContext(ctx, query, id).Scan(
 		&food.ID,
 		&food.CreateAt,
 		&food.Title,
@@ -100,10 +106,11 @@ func (f FoodModel) Update(food *Food) error {
 		food.ID,
 		food.Version,
 	}
-
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	// Use the QueryRow() to execute the query, passing args slices as a variadic parameter and scanning
 	// the new version value into the food struct
-	return f.DB.QueryRow(query, arg...).Scan(&food.Version)
+	return f.DB.QueryRowContext(ctx, query, arg...).Scan(&food.Version)
 }
 
 // Add a placeholder method for deleting a specific record from movies table.
@@ -113,7 +120,10 @@ func (f FoodModel) Delete(id int64) error {
 	}
 	query := `DELETE FROM foods WHERE id=$1`
 
-	result, err := f.DB.Exec(query, id)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	result, err := f.DB.ExecContext(ctx, query, id)
 	if err != nil {
 		return err
 	}
