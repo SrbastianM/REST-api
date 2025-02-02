@@ -22,6 +22,7 @@ func (app *application) routes() *httprouter.Router {
 
 	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/foods", app.createFoodHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/foods", app.listMoviesHablder)
 	router.HandlerFunc(http.MethodGet, "/v1/foods/:id", app.showFoodHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/foods/:id", app.updateFoodHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/foods/:id", app.deleteFoodHandler)

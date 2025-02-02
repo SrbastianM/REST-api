@@ -71,7 +71,6 @@ func (app *application) createFoodHandler(w http.ResponseWriter, r *http.Request
 	fmt.Fprintf(w, "%+v\n", input)
 }
 
-// Use the helper "ReadIdParam"
 func (app *application) showFoodHandler(w http.ResponseWriter, r *http.Request) {
 	id, err := app.readIDParam(r)
 	if err != nil {
@@ -202,4 +201,31 @@ func (app *application) deleteFoodHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
+}
+
+func (app *application) listMoviesHablder(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Title string
+		Types []string
+		data.Filters
+	}
+
+	v := validator.New()
+	qs := r.URL.Query()
+	// Use the helpers to extract the title, the types string values, falling back to default of an
+	// empty string and an empty slice respectively it they are not provided by the client
+	input.Title = app.readString(qs, "title", "")
+	input.Types = app.readCSV(qs, "types", []string{})
+	// Get the page size query string values as integers and set the default page value to 1 and
+	// the default size to 20.
+	input.Filters.Page = app.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
+	input.Filters.Sort = app.readString(qs, "sort", "id")
+
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+	// Dumb the contents of the input struct in a HTTP response
+	fmt.Fprintf(w, "%+v\n", input)
 }
