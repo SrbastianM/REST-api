@@ -94,6 +94,49 @@ func (f FoodModel) Get(id int64) (*Food, error) {
 	return &food, nil
 }
 
+// Add placeholder method to retrieve all the records from the food table.
+func (f FoodModel) GetAll(title string, types []string, filters Filters) ([]*Food, error) {
+	// Create a new GetAll() method wich return a slice of movies.
+	query := `SELECT id, created_at, title, type, version FROM foods ORDER BY id`
+	// Create a context with a 3-second timeout.
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	// Execute the query and return an sql.Rows result set containing the result
+	rows, err := f.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	// Close the result set before GetAll() returns
+	defer rows.Close()
+
+	// Instance an empty slice to hold the food data.
+	foods := []*Food{}
+
+	// Use rows.Next() to iterate the rows in the result set
+	for rows.Next() {
+		// Initilize an empty Food struct to hold the data for an individual food
+		var food Food
+		err := rows.Scan(
+			&food.ID,
+			&food.CreateAt,
+			&food.Title,
+			pq.Array(&food.Types),
+			&food.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+		// Add the Food struct to the slice
+		foods = append(foods, &food)
+	}
+	// Whem the rows.Next() loop has finished, call rows.Err() to retrieve any error
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	// Return the slice of movies
+	return foods, nil
+}
+
 // Add a placeholder method for updating a specific record in the food table.
 func (f FoodModel) Update(food *Food) error {
 	// Declare SQL query for updating the record and returning the new version number

@@ -227,6 +227,18 @@ func (app *application) listMoviesHablder(w http.ResponseWriter, r *http.Request
 		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
+
+	foods, err := app.models.Foods.GetAll(input.Title, input.Types, input.Filters)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	err = app.writeJSON(w, http.StatusOK, envelop{"foods": foods}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
+
 	// Dumb the contents of the input struct in a HTTP response
 	fmt.Fprintf(w, "%+v\n", input)
 }
