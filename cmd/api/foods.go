@@ -221,7 +221,7 @@ func (app *application) listMoviesHablder(w http.ResponseWriter, r *http.Request
 	input.Filters.Page = app.readInt(qs, "page", 1, v)
 	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
 	input.Filters.Sort = app.readString(qs, "sort", "id")
-	input.Filters.SortSafeList = []string{"id", "title", "-id", "-title"}
+	input.Filters.SortSafeList = []string{"id", "title", "-id", "-title", "type"}
 
 	if data.ValidateFilters(v, input.Filters); !v.Valid() {
 		app.failedValidationResponse(w, r, v.Errors)
@@ -238,7 +238,4 @@ func (app *application) listMoviesHablder(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
-
-	// Dumb the contents of the input struct in a HTTP response
-	fmt.Fprintf(w, "%+v\n", input)
 }

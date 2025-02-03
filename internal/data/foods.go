@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/lib/pq"
@@ -97,12 +98,19 @@ func (f FoodModel) Get(id int64) (*Food, error) {
 // Add placeholder method to retrieve all the records from the food table.
 func (f FoodModel) GetAll(title string, types []string, filters Filters) ([]*Food, error) {
 	// Create a new GetAll() method wich return a slice of movies.
-	query := `SELECT id, created_at, title, type, version FROM foods ORDER BY id`
+	query := fmt.Sprintf(`
+	SELECT id, created_at, title, type, version
+	FROM foods
+	WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
+	AND (type = ANY($2) OR $2 = '{}')
+	ORDER BY %s %s, id ASC`, filters.sortColumn(), filters.sortDirection())
+
 	// Create a context with a 3-second timeout.
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+
 	// Execute the query and return an sql.Rows result set containing the result
-	rows, err := f.DB.QueryContext(ctx, query)
+	rows, err := f.DB.QueryContext(ctx, query, title, pq.Array(types))
 	if err != nil {
 		return nil, err
 	}
