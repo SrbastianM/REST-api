@@ -96,27 +96,31 @@ func (f FoodModel) Get(id int64) (*Food, error) {
 }
 
 // Add placeholder method to retrieve all the records from the food table.
-func (f FoodModel) GetAll(title string, types []string, filters Filters) ([]*Food, error) {
+func (f FoodModel) GetAll(title string, types []string, filters Filters) ([]*Food, Metadata, error) {
 	// Create a new GetAll() method wich return a slice of movies.
 	query := fmt.Sprintf(`
-	SELECT id, created_at, title, type, version
+	SELECT count(*) OVER(), id, created_at, title, type, version
 	FROM foods
 	WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
 	AND (type && $2 OR $2 = '{}')
-	ORDER BY %s %s, id ASC`, filters.sortColumn(), filters.sortDirection())
+	ORDER BY %s %s, id ASC
+	LIMIT $3 OFFSET $4`, filters.sortColumn(), filters.sortDirection())
 
 	// Create a context with a 3-second timeout.
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	args := []interface{}{title, pq.Array(types), filters.limit(), filters.offset()}
+
 	// Execute the query and return an sql.Rows result set containing the result
-	rows, err := f.DB.QueryContext(ctx, query, title, pq.Array(types))
+	rows, err := f.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
 	// Close the result set before GetAll() returns
 	defer rows.Close()
 
+	totalRecord := 0
 	// Instance an empty slice to hold the food data.
 	foods := []*Food{}
 
@@ -125,6 +129,7 @@ func (f FoodModel) GetAll(title string, types []string, filters Filters) ([]*Foo
 		// Initilize an empty Food struct to hold the data for an individual food
 		var food Food
 		err := rows.Scan(
+			&totalRecord,
 			&food.ID,
 			&food.CreateAt,
 			&food.Title,
@@ -132,17 +137,19 @@ func (f FoodModel) GetAll(title string, types []string, filters Filters) ([]*Foo
 			&food.Version,
 		)
 		if err != nil {
-			return nil, err
+			return nil, Metadata{}, err
 		}
 		// Add the Food struct to the slice
 		foods = append(foods, &food)
 	}
 	// Whem the rows.Next() loop has finished, call rows.Err() to retrieve any error
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, Metadata{}, err
 	}
+
+	metadata := calculateMetadata(totalRecord, filters.Page, filters.PageSize)
 	// Return the slice of movies
-	return foods, nil
+	return foods, metadata, nil
 }
 
 // Add a placeholder method for updating a specific record in the food table.

@@ -228,13 +228,13 @@ func (app *application) listFoodHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	foods, err := app.models.Foods.GetAll(input.Title, input.Types, input.Filters)
+	foods, metadata, err := app.models.Foods.GetAll(input.Title, input.Types, input.Filters)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelop{"foods": foods}, nil)
+	err = app.writeJSON(w, http.StatusOK, envelop{"foods": foods, "metada": metadata}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

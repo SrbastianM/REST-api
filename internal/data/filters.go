@@ -2,6 +2,7 @@ package data
 
 import (
 	"SrbastianM/rest-api-gin/internal/validator"
+	"math"
 	"strings"
 )
 
@@ -10,6 +11,14 @@ type Filters struct {
 	PageSize     int
 	Sort         string
 	SortSafeList []string
+}
+
+type Metadata struct {
+	CurrentPage  int
+	PageSize     int
+	FirstPage    int
+	LastPage     int
+	TotalRecords int
 }
 
 // Check that the client-provided Sort fiel matches one of the entries in our SortSafeList
@@ -32,6 +41,14 @@ func (f Filters) sortDirection() string {
 	return "ASC"
 }
 
+func (f Filters) limit() int {
+	return f.PageSize
+}
+
+func (f Filters) offset() int {
+	return (f.Page - 1) * f.PageSize
+}
+
 func ValidateFilters(v *validator.Validator, f Filters) {
 	v.Check(f.Page > 0, "page", "must be greater than zero")
 	v.Check(f.Page <= 10_000_000, "page", "must be a maximum of 10 million")
@@ -39,4 +56,17 @@ func ValidateFilters(v *validator.Validator, f Filters) {
 	v.Check(f.PageSize <= 100, "page_size", "must be a maximum of 100")
 
 	v.Check(validator.In(f.Sort, f.SortSafeList...), "sort", "invalid sort value")
+}
+
+func calculateMetadata(totalRecords, page, pageSize int) Metadata {
+	if totalRecords == 0 {
+		return Metadata{}
+	}
+	return Metadata{
+		CurrentPage:  page,
+		PageSize:     pageSize,
+		FirstPage:    1,
+		LastPage:     int(math.Ceil(float64(totalRecords) / float64(pageSize))),
+		TotalRecords: totalRecords,
+	}
 }
