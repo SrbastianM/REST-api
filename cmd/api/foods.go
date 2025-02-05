@@ -203,7 +203,7 @@ func (app *application) deleteFoodHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func (app *application) listFoodHandlder(w http.ResponseWriter, r *http.Request) {
+func (app *application) listFoodHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Title string
 		Types []string

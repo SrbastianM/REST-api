@@ -102,7 +102,7 @@ func (f FoodModel) GetAll(title string, types []string, filters Filters) ([]*Foo
 	SELECT id, created_at, title, type, version
 	FROM foods
 	WHERE (to_tsvector('simple', title) @@ plainto_tsquery('simple', $1) OR $1 = '')
-	AND (type = ANY($2) OR $2 = '{}')
+	AND (type && $2 OR $2 = '{}')
 	ORDER BY %s %s, id ASC`, filters.sortColumn(), filters.sortDirection())
 
 	// Create a context with a 3-second timeout.
