@@ -20,7 +20,7 @@ func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Reques
 	// and send the data encode to JSON and response the status and the JSON Response -> see the writeJSON() helper
 	err := app.writeJSON(w, http.StatusOK, env, nil)
 	if err != nil {
-		app.logger.Println(err)
+		app.logger.PrintError(err, nil)
 		app.serverErrorResponse(w, r, err)
 	}
 }

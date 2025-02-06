@@ -95,7 +95,7 @@ func (app *application) showFoodHandler(w http.ResponseWriter, r *http.Request) 
 	// Create an instance of envelop to it to writeJSON()
 	err = app.writeJSON(w, http.StatusOK, envelop{"food": food}, nil)
 	if err != nil {
-		app.logger.Println(err)
+		app.logger.PrintError(err, nil)
 		app.serverErrorResponse(w, r, err)
 	}
 }

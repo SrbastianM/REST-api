@@ -9,7 +9,7 @@ import (
 // Register the methods, URL patterns and handler functions
 // for the end points GET and POST using the HandlerFunction() method
 // and return the httprouter instance
-func (app *application) routes() *httprouter.Router {
+func (app *application) routes() http.Handler {
 	router := httprouter.New()
 
 	// convert the method helper to a http.Handler and set the custom
@@ -26,5 +26,6 @@ func (app *application) routes() *httprouter.Router {
 	router.HandlerFunc(http.MethodGet, "/v1/foods/:id", app.showFoodHandler)
 	router.HandlerFunc(http.MethodPatch, "/v1/foods/:id", app.updateFoodHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/foods/:id", app.deleteFoodHandler)
-	return router
+
+	return app.recoverPanic(router)
 }
