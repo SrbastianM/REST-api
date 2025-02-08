@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
+	"sync"
+	"time"
 
 	"golang.org/x/time/rate"
 )
@@ -28,17 +31,56 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 }
 
 func (app *application) rateLimit(next http.Handler) http.Handler {
+	type client struct {
+		limiter  *rate.Limiter
+		lastSeen time.Time
+	}
+
 	// Initialize a new rate limiter wich allows an average of 2 request per second,
 	// with a maximun of a 4 request in a single burst -> at the same time
-	limiter := rate.NewLimiter(2, 4)
+	var (
+		mu      sync.Mutex
+		clients = make(map[string]*client)
+	)
 
-	// This limiter.Allow() to see if the request is permitted, and if it's not,
-	// call the raterLimitExceededResponse() helper to return 429 To Many request response
+	go func() {
+		for {
+			time.Sleep(time.Minute)
+			mu.Lock()
+			for ip, client := range clients {
+				if time.Since(client.lastSeen) > 3*time.Minute {
+					delete(clients, ip)
+				}
+			}
+			mu.Unlock()
+		}
+	}()
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !limiter.Allow() {
+		// Extract the clients IP address from the request
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+		// Lock the mutex to prevent this code form being execuded concurrently.
+		mu.Lock()
+		// Check if the IP is already on the map, if doesnt then initialize a new rate
+		// limiter and add the IP and the limiter to the map
+		if _, found := clients[ip]; !found {
+			clients[ip] = &client{limiter: rate.NewLimiter(2, 4)}
+		}
+
+		clients[ip].lastSeen = time.Now()
+		// Check if the IP address exists. If the request isn't allowed, ulock the mutext
+		// and return the method rateLimitExceededResponse() wich means that is to many request
+		if !clients[ip].limiter.Allow() {
+			mu.Unlock()
 			app.rateLimitExceededResponse(w, r)
 			return
 		}
+
+		mu.Unlock()
 		next.ServeHTTP(w, r)
 	})
 }
