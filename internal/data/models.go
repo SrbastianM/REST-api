@@ -16,6 +16,7 @@ var (
 // like UserModel or PermissionModel, as our build progresses.
 type Models struct {
 	Foods FoodModel
+	Users UserModel
 }
 
 // For ease of use, we also add a New() method which return a Models struct constaining
@@ -23,6 +24,7 @@ type Models struct {
 func NewModels(db *sql.DB) Models {
 	return Models{
 		Foods: FoodModel{DB: db},
+		Users: UserModel{DB: db},
 	}
 }
 
