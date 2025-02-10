@@ -31,6 +31,11 @@ type config struct {
 		maxIdleConns  int
 		maxIdleTime   string
 	}
+	limiter struct {
+		rps    float64
+		burst  int
+		enable bool
+	}
 }
 
 // Define the struct to hold the dependencies for the HTTP handlers,
@@ -61,6 +66,10 @@ func main() {
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "PostgreSQL max connection idle time")
 
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximun request per second")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximun burst")
+	flag.BoolVar(&cfg.limiter.enable, "limiter-enable", true, "Enable rate limiter")
+
 	flag.Parse()
 
 	//initialize new logger which writes messages to the standard out stream
@@ -81,11 +90,6 @@ func main() {
 		logger: logger,
 		models: data.NewModels(db),
 	}
-
-	// Declare a new serveMux and add the version and the route wich dispatches requests
-	// to healthcheck method
-	// mux := http.NewServeMux()
-	// mux.HandleFunc("/v1/healthcheck", app.healthcheckHandler)
 
 	// Declare a HTTP server with some sensible properties timeout settings
 	// it listents on the port provided (4000), and use the httprouter as handler

@@ -58,29 +58,30 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Extract the clients IP address from the request
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil {
-			app.serverErrorResponse(w, r, err)
-			return
-		}
-		// Lock the mutex to prevent this code form being execuded concurrently.
-		mu.Lock()
-		// Check if the IP is already on the map, if doesnt then initialize a new rate
-		// limiter and add the IP and the limiter to the map
-		if _, found := clients[ip]; !found {
-			clients[ip] = &client{limiter: rate.NewLimiter(2, 4)}
-		}
-
-		clients[ip].lastSeen = time.Now()
-		// Check if the IP address exists. If the request isn't allowed, ulock the mutext
-		// and return the method rateLimitExceededResponse() wich means that is to many request
-		if !clients[ip].limiter.Allow() {
+		if app.config.limiter.enable {
+			ip, _, err := net.SplitHostPort(r.RemoteAddr)
+			if err != nil {
+				app.serverErrorResponse(w, r, err)
+				return
+			}
+			// Lock the mutex to prevent this code form being execuded concurrently.
+			mu.Lock()
+			// Check if the IP is already on the map, if doesnt then initialize a new rate
+			// limiter and add the IP and the limiter to the map
+			// Feat: Use the request-per-second and burst values from the config struct
+			if _, found := clients[ip]; !found {
+				clients[ip] = &client{limiter: rate.NewLimiter(rate.Limit(app.config.limiter.rps), app.config.limiter.burst)}
+			}
+			clients[ip].lastSeen = time.Now()
+			// Check if the IP address exists. If the request isn't allowed, ulock the mutext
+			// and return the method rateLimitExceededResponse() wich means that is to many request
+			if !clients[ip].limiter.Allow() {
+				mu.Unlock()
+				app.rateLimitExceededResponse(w, r)
+				return
+			}
 			mu.Unlock()
-			app.rateLimitExceededResponse(w, r)
-			return
 		}
-
-		mu.Unlock()
 		next.ServeHTTP(w, r)
 	})
 }
