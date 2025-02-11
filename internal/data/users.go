@@ -7,6 +7,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jackc/pgconn"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -27,6 +28,7 @@ type password struct {
 
 var (
 	ErrDuplicateEmail = errors.New("duplicate email")
+	pgErr             *pgconn.PgError
 )
 
 type UserModel struct {
@@ -106,7 +108,7 @@ func (m UserModel) Insert(user *User) error {
 	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
 	if err != nil {
 		switch {
-		case err.Error() == `pq: Duplicate key value violates unique constraint "user_email_key"`:
+		case errors.As(err, &pgErr) && pgErr.Code == "23505":
 			return ErrDuplicateEmail
 		default:
 			return err

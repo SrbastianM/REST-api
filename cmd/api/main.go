@@ -3,6 +3,7 @@ package main
 import (
 	"SrbastianM/rest-api-gin/internal/data"
 	"SrbastianM/rest-api-gin/internal/jsonlog"
+	"SrbastianM/rest-api-gin/internal/mailer"
 	"context"
 	"database/sql"
 	"flag"
@@ -34,6 +35,13 @@ type config struct {
 		burst  int
 		enable bool
 	}
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 
 // Define the struct to hold the dependencies for the HTTP handlers,
@@ -43,6 +51,7 @@ type application struct {
 	config config
 	logger *jsonlog.Logger
 	models data.Models
+	mailer mailer.Mailer
 }
 
 func main() {
@@ -68,6 +77,12 @@ func main() {
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximun burst")
 	flag.BoolVar(&cfg.limiter.enable, "limiter-enable", true, "Enable rate limiter")
 
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.mailtrap.io", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 25, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "f16468f38c5882", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "da68096b0dc8fd", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Foody <no-reply@foody.net>", "SMTP sender")
+
 	flag.Parse()
 
 	//initialize new logger which writes messages to the standard out stream
@@ -87,6 +102,7 @@ func main() {
 		config: cfg,
 		logger: logger,
 		models: data.NewModels(db),
+		mailer: mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 
 	err = app.serve()
