@@ -12,6 +12,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var AnonnymousUser = &User{}
+
 type User struct {
 	ID        int64
 	CreatedAt time.Time
@@ -34,6 +36,10 @@ var (
 
 type UserModel struct {
 	DB *sql.DB
+}
+
+func (u *User) IsAnnonymous() bool {
+	return u == AnonnymousUser
 }
 
 func ValidateEmail(v *validator.Validator, email string) {
