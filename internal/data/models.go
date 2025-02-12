@@ -17,6 +17,7 @@ var (
 type Models struct {
 	Foods FoodModel
 	Users UserModel
+	Token TokenModel
 }
 
 // For ease of use, we also add a New() method which return a Models struct constaining
@@ -25,6 +26,7 @@ func NewModels(db *sql.DB) Models {
 	return Models{
 		Foods: FoodModel{DB: db},
 		Users: UserModel{DB: db},
+		Token: TokenModel{DB: db},
 	}
 }
 
