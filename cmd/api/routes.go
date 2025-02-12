@@ -20,12 +20,12 @@ func (app *application) routes() http.Handler {
 	// and set the custom handler (405) not allowed responses
 	router.MethodNotAllowed = http.HandlerFunc(app.methodNotAllowedResponse)
 
-	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.healthcheckHandler)
-	router.HandlerFunc(http.MethodPost, "/v1/foods", app.createFoodHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/foods", app.listFoodHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/foods/:id", app.showFoodHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/foods/:id", app.updateFoodHandler)
-	router.HandlerFunc(http.MethodDelete, "/v1/foods/:id", app.deleteFoodHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/healthcheck", app.requireActivedUser(app.listFoodHandler))
+	router.HandlerFunc(http.MethodPost, "/v1/foods", app.requireActivedUser(app.createFoodHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/foods", app.requireActivedUser(app.listFoodHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/foods/:id", app.requireActivedUser(app.showFoodHandler))
+	router.HandlerFunc(http.MethodPatch, "/v1/foods/:id", app.requireActivedUser(app.updateFoodHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/foods/:id", app.requireActivedUser(app.deleteFoodHandler))
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
 	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationTokenHandler)
