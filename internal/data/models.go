@@ -15,18 +15,20 @@ var (
 // Create models struct which wraps the FoodModel. We'll add another models to this
 // like UserModel or PermissionModel, as our build progresses.
 type Models struct {
-	Foods FoodModel
-	Users UserModel
-	Token TokenModel
+	Foods       FoodModel
+	Users       UserModel
+	Token       TokenModel
+	Permissions PermissionsModel
 }
 
 // For ease of use, we also add a New() method which return a Models struct constaining
 // the initialized FoodModel.
 func NewModels(db *sql.DB) Models {
 	return Models{
-		Foods: FoodModel{DB: db},
-		Users: UserModel{DB: db},
-		Token: TokenModel{DB: db},
+		Foods:       FoodModel{DB: db},
+		Users:       UserModel{DB: db},
+		Token:       TokenModel{DB: db},
+		Permissions: PermissionsModel{DB: db},
 	}
 }
 

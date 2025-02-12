@@ -10,9 +10,9 @@ import (
 
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Name     string
-		Email    string
-		Password string
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 
 	err := app.readJSON(w, r, &input)
@@ -49,6 +49,12 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		default:
 			app.serverErrorResponse(w, r, err)
 		}
+		return
+	}
+
+	err = app.models.Permissions.AddForUser(user.ID, "foods:read")
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
 		return
 	}
 
