@@ -12,6 +12,108 @@ Type in youre terminal before clone the repository, at this moment I asume you h
 ```CMD
 make run
 ```
+#### Important
+Foody is using koyeb a service who provides an alternative to use the DB in your local machine if you dont want to use it you need to create a DB in youre local machine,remember do the next sql migrations:
+```CMD
+migrate create -seq -ext=.sql -dir=./migrations create_foods_table
+```
+This returns the creation of two files:
+```
+./migrations/
+├── 000001_create_foods_table.down.sql
+└── 000001_create_foods_table.up.sql
+```
+into the file 000001_create_foods_table.down.sql, copy the follow query:
+```SQL
+CREATE TABLE IF NOT EXISTS foods (
+id bigserial PRIMARY KEY,
+created_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
+title text NOT NULL,
+types text[] NOT NULL,
+version integer NOT NULL DEFAULT 1
+);
+```
+and in the 000001_create_foods_table.up.sql the next:
+```SQL
+DROP TABLE IF EXISTS foods;
+```
+now is time to run the migration (this is a brew example to how to do the migration to remote services):
+```CMD
+migrate -source="s3://<bucket>/<path>" -database=$EXAMPLE_DSN up
+migrate -source="github://owner/repo/path#ref" -database=$EXAMPLE_DSN up
+migrate -source="github://user:personal-access-token@owner/repo/path#ref" -database=$EXAMPLE_DSN up
+```
+So for now you got the foods table if you following the steps, now run the index:
+```CMD
+migrate create -seq -ext .sql -dir ./migrations add_food_indexes
+```
+in the file 000002_add_foods_indexes.up.sql copy the following code:
+```SQL
+CREATE INDEX IF NOT EXISTS foods_title_idx ON foods USING GIN (to_tsvector('simple', title));
+CREATE INDEX IF NOT EXISTS fooods_types_idx ON foods USING GIN (types);
+```
+same thing with the 000002_add_foods_indexes.down.sql:
+```SQL
+DROP INDEX IF EXISTS foods_title_idx;
+DROP INDEX IF EXISTS foods_types_idx;
+```
+Now execute the up migration to add the indexes to DB
+
+### To create the tables for the user auth:
+At this point youre migrate two migration files to youre DB, so for now I asume you now how to create and send the migratios so I only focus in what the file have
+#### create_users_table_up.sql
+```SQL
+CREATE TABLE IF NOT EXISTS users (
+id bigserial PRIMARY KEY,
+created_at timestamp(0) with time zone NOT NULL DEFAULT NOW(),
+name text NOT NULL,
+email citext UNIQUE NOT NULL,
+password_hash bytea NOT NULL,
+activated bool NOT NULL,
+version integer NOT NULL DEFAULT 1
+);
+```
+#### create_user_table_down.sql
+```SQL
+DROP TABLE IF EXISTS users;
+```
+#### create_tokens_table_up.sql
+```SQL
+CREATE TABLE IF NOT EXISTS tokens (
+hash bytea PRIMARY KEY,
+user_id bigint NOT NULL REFERENCES users ON DELETE CASCADE,
+expiry timestamp(0) with time zone NOT NULL,
+scope text NOT NULL
+);
+```
+#### create_tokens_table.down.sql
+```SQL
+DROP TABLE IF EXISTS tokens;
+```
+#### add_permissions.up.sql
+```SQL
+CREATE TABLE IF NOT EXISTS permissions (
+id bigserial PRIMARY KEY,
+code text NOT NULL
+);
+CREATE TABLE IF NOT EXISTS users_permissions (
+user_id bigint NOT NULL REFERENCES users ON DELETE CASCADE,
+permission_id bigint NOT NULL REFERENCES permissions ON DELETE CASCADE,
+PRIMARY KEY (user_id, permission_id)
+);
+-- Add the two permissions to the table.
+INSERT INTO permissions (code)
+VALUES
+('foods:read'),
+('foods:write');
+```
+#### add_permissions.down.sql
+```SQL
+DROP TABLE IF EXISTS users_permissions;
+DROP TABLE IF EXISTS permissions;
+```
+Now at this point the API is setting up to be use it
+--- 
 # Foody API 
 Let's begin talking about the end point's of the API. Now it have 10 enpoints which are:
 
