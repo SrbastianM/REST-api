@@ -5,6 +5,12 @@ So Foody was just born.
 #Foody API 
 Let's begin talking about the end point's of the API. Now it have 10 enpoints which are:
 
+### Instalation
+Run the make file with the following command to install all the package, run the test's and check the files:
+```CMD
+make audit
+```
+
 ## This Enpoinst are the create, delete, update, and read of table "foods" |The endpoint named "healthcheck" is an exception|
 
 | Method  | EndPoint | Description |
@@ -107,5 +113,100 @@ Content-Length: 199
 }
 {Title:Soup Types:[onion potatoo pepper]}
 ```
-#### 
-
+#### updateFood
+Likewise I told before only user with the permissions of write and read can update records.
+```CMD
+  BODY='{"title":"Soup Update", "types":["onion", "update", "pepper"]}'
+  curl -X PATCH -d "$BODY" -H "Authorization: Bearer ITVDVHAJEJCXTKKDRDUZ3F5IXU" localhost:4000/v1/foods/5
+```
+if everthing is good, the API returns this:
+```JSON
+{
+	"food": {
+		"ID": 5,
+		"CreateAt": "2025-02-13T19:07:54Z",
+		"Title": "Soup Update", -> The update is present
+		"Types": [
+			"onion",
+			"update", -> And here
+			"pepper"
+		],
+		"Version": 2 -> The version number is higher because the registration has differences
+	}
+}
+```
+#### showFood
+This endpoint can access by all the users (obviosly register and actived) just because only need the "read" permission to use it.
+```CMD
+  curl -H "Authorization: Bearer ITVDVHAJEJCXTKKDRDUZ3F5IXU" localhost:4000/v1/foods/5
+```
+API returns:
+```JSON
+{
+	"food": {
+		"ID": 5,
+		"CreateAt": "2025-02-13T19:07:54Z",
+		"Title": "Soup Update",
+		"Types": [
+			"onion",
+			"update",
+			"pepper"
+		],
+		"Version": 2
+	}
+}
+```
+#### listFood
+This endpoint like I told in the previous step, is acceded by all the user register and activated in the API.
+```CMD
+  curl -H "Authorization: Bearer ITVDVHAJEJCXTKKDRDUZ3F5IXU" localhost:4000/v1/foods
+```
+The API returns:
+```JSON
+{
+	"foods": [
+		{
+			"ID": 3,
+			"CreateAt": "2025-02-05T15:05:17Z",
+			"Title": "Pizza",
+			"Types": [
+				"pepperoni",
+				"fastfood",
+				"chesee"
+			],
+			"Version": 1
+		},
+		{
+			"ID": 4,
+			"CreateAt": "2025-02-05T15:05:52Z",
+			"Title": "Soup Test",
+			"Types": [
+				"onion",
+				"potatoo",
+				"pepper"
+			],
+			"Version": 1
+		},
+		{
+			"ID": 5,
+			"CreateAt": "2025-02-13T19:07:54Z",
+			"Title": "Soup Update",
+			"Types": [
+				"onion",
+				"update",
+				"pepper"
+			],
+			"Version": 2
+		}
+	],
+	"metada": {
+		"CurrentPage": 1,
+		"PageSize": 20,
+		"FirstPage": 1,
+		"LastPage": 1,
+		"TotalRecords": 3
+	}
+}
+```
+---
+For now feel safe to clone this repository and run in youre local machine, is not deployed now but in a few days I guess it happens
