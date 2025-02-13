@@ -2,14 +2,13 @@
 I know, the name of the repository is not the same as the name of the API, but in the progress of creation I came up with some ideas and thought “This name is going to be good”.
 So Foody was just born.
 
-#Foody API 
-Let's begin talking about the end point's of the API. Now it have 10 enpoints which are:
-
 ### Instalation
 Run the make file with the following command to install all the package, run the test's and check the files:
 ```CMD
 make audit
 ```
+# Foody API 
+Let's begin talking about the end point's of the API. Now it have 10 enpoints which are:
 
 ## This Enpoinst are the create, delete, update, and read of table "foods" |The endpoint named "healthcheck" is an exception|
 
