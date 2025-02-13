@@ -8,7 +8,7 @@ import (
 // Define a custom ErrorRecordNotFound error. We'll return this from our
 // Get() method then looking up a food doesn't exist in our database
 var (
-	ErrRecordNotFound = errors.New("Record not found")
+	ErrRecordNotFound = errors.New("record not found")
 	ErrEditConflict   = errors.New("edit conflict")
 )
 
