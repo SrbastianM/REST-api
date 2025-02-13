@@ -7,6 +7,11 @@ Run the make file with the following command to install all the package, run the
 ```CMD
 make audit
 ```
+### How to Run it:
+Type in youre terminal before clone the repository, at this moment I asume you have git in youre machine so:
+```CMD
+make run
+```
 # Foody API 
 Let's begin talking about the end point's of the API. Now it have 10 enpoints which are:
 
